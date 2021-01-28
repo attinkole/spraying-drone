@@ -17,6 +17,7 @@ long ustep = 8;      // Microstepping = 1, 2, 4, 8, 16, 32
 long rpm = 30;      // Toerental in rpm
 long omw = 400;      // Aantal volle stappen per omwenteling (360 / staphoek in graden)
 
+// Same channel as the controller for communication
 RF24 radio(7, 8);   // nRF24L01 (CE, CSN)
 const byte address[6] = "00001";
 
@@ -27,8 +28,8 @@ Servo servo1;
 Servo servo2;
 
 int servoValue1, servoValue2;
-int pan = 90;
-int tilt = 90;
+int ser1 = 90;
+int ser2 = 90;
 int positie = omw * ustep;
 int homing = 0;
 int steptime = 60000000 / (omw * ustep * rpm);
@@ -38,6 +39,8 @@ struct Data_Package {
   byte joy1y;
   byte joy2x;
   byte joy2y;
+  byte joy1sw;
+  byte joy2sw;
   byte button1;
   byte button2;
 };
@@ -85,7 +88,7 @@ void loop() {
 
   // begin stepper code
 
-  if(homing == 0 && digitalRead(REF_PIN) == LOW){   // Linksom draaien tot eindstop hoog wordt
+  if(homing == 0 && digitalRead(REF_PIN) == LOW){   // Linksom draaien tot eindstop hoog wordt 
     positie = 0;
     homing = 1;
   }
@@ -108,28 +111,28 @@ void loop() {
     positie++;
   }
 
-  // eind stepper code
-
-  servoValue1 = map(data.joy1x, 0, 255, 0, 180);
-    if(servoValue1 > 95 && pan < 181)
+  // end stepper code
+ // onderstaande code is om de servo positie vast te houden
+  servoValue1 = map(data.joy1x, 0, 255, 0, 180);// servo waardes worden omgezet naar graden
+    if(servoValue1 > 95 && ser1 < 181) // 
   {
-    pan++;
+    ser1++; // postie servo gaat omhoog
   }
-  if(servoValue1 < 85 && pan > 0)
+  if(servoValue1 < 85 && ser1 > 0)
   {
-    pan--;
+    ser1--; // postitie servo gaat omlaag
   }  
-  servo1.write(pan);
+  servo1.write(ser1); //servo waarde wordt geschreven
   servoValue2 = map(data.joy2x, 0, 255, 0, 180);
-  if(servoValue2 > 95 && tilt < 181)
+  if(servoValue2 > 95 && ser2 < 181)
   {
-    tilt++;
+    ser2++;
   }
-  if(servoValue2 < 85 && tilt > 0)
+  if(servoValue2 < 85 && ser2 > 0)
   {
-    tilt--;
+    ser2--;
   }  
-  servo2.write(tilt);
+  servo2.write(ser2);
   delay(10);
 }
 
@@ -138,6 +141,8 @@ void resetData() {
   data.joy1y = 127;
   data.joy2x = 127;
   data.joy2y = 127;
+  data.joy1sw = 1;
+  data.joy2sw = 1;
   data.button1 = 1;
   data.button2 = 1;
 }
